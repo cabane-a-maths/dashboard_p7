@@ -1,11 +1,8 @@
-import csv
 import pandas as pd
 import streamlit as st
 from streamlit_option_menu import option_menu
 import requests
 from PIL import Image
-import sys
-import os
 import streamlit.components.v1 as components
 
 # Load data
