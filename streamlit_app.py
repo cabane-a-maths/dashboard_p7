@@ -54,7 +54,7 @@ if selected == "Prédiction des clients":
             'EXT_SOURCE_3': df_dico['EXT_SOURCE_3']
         }
         if st.button("Predict"):
-            response = requests.post("http://54.159.228.118/predict", json=data)
+            response = requests.post("https://vast-journey-10264.herokuapp.com/predict", json=data)
             prediction = response.text
             st.success(prediction)
 
@@ -112,7 +112,7 @@ if selected == "Prédiction des nouvaux clients":
         }
 
         if st.button("Predict"):
-            response = requests.post("http://54.159.228.118/predict", json=data)
+            response = requests.post("https://vast-journey-10264.herokuapp.com/predict", json=data)
             prediction = response.text
             st.success(prediction)
 
