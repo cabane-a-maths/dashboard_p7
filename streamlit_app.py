@@ -1,12 +1,20 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 from streamlit_option_menu import option_menu
 import requests
 from PIL import Image
 import streamlit.components.v1 as components
+from lime import lime_tabular
+import lightgbm
+import joblib
 
 # Load data
 df = pd.read_csv('X_train_features.csv')
+
+# Initialize model artifacte files. This will be loaded at the start of FastAPI model server.
+lgbm = joblib.load(open("model_loans.joblib","rb"))
+#features = joblib.load(open("features.joblib", "rb"))
 
 # Sidebar menu
 with st.sidebar:
@@ -59,10 +67,24 @@ if selected == "Prédiction des clients":
             st.success(prediction)
 
         if st.button("Interpréter"):
-            HtmlFile = open(r'lime_fig.html', 'r', encoding='utf-8')
-            source_code = HtmlFile.read()
-            print(source_code)
-            components.html(source_code, height=700)
+            object = requests.post("https://vast-journey-10264.herokuapp.com/explain", json=data)
+            explain_lim = object.json
+            # Explain/Interpretability
+            interpretor = lime_tabular.LimeTabularExplainer(
+                training_data=np.array(df),
+                feature_names=df.columns.values.tolist(),
+                mode='classification')
+            data_conv =pd.DataFrame.from_dict([data])
+            data_array = data_conv.values.ravel()
+            exp = interpretor.explain_instance(data_row=np.array(data_array),
+                                            predict_fn=lgbm.predict_proba,
+                                            num_samples=10000,
+                                            num_features=6)
+            # exp.save_to_file('lime_fig.html')
+            # HtmlFile = open(r'lime_fig.html', 'r', encoding='utf-8')
+            # source_code = HtmlFile.read()
+            # print(source_code)
+            components.html(exp.as_html(), height=700)
     get_pred_per_client()
 
 # Client page
