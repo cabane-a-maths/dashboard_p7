@@ -12,7 +12,7 @@ import joblib
 import shap
 shap.initjs() # JavaScript plots
 import matplotlib.pyplot as pl
-
+import time
 # Load data
 @st.cache
 def load_data():
@@ -158,20 +158,28 @@ if selected == "Prédiction des nouvaux clients":
 # Comparison page
 if selected == "Comparaison":
     st.title(f"Quelques comparaisons")
+    st.text("Nous cherchons les resultas pour vous")
+    
+    # Progress bar
+    my_bar = st.progress(0)
+    for percent_complete in range(100):
+        time.sleep(0.2)
+        my_bar.progress(percent_complete + 1)
+    
     st.subheader("Clients similaires")
     # Display stacked Shapley values along clustered observations
     explainer = shap.TreeExplainer(lgbm)
     shap_values = explainer.shap_values(df.sample(2000))
     st_shap(shap.force_plot(explainer.expected_value[0], shap_values[0], features), 400)
     st.subheader("Explication générale")
+    
     st.set_option('deprecation.showPyplotGlobalUse', False)
-   
     #summary_plot
     explain = shap.Explainer(lgbm, df.sample(2000))
     shap_values_beeswarm = explain(df.sample(2000), check_additivity=False )
     shap.plots.beeswarm(shap_values_beeswarm)
     st.pyplot()
-
+    st.balloons()
     # """ # Regardons ensuite au travers d’une courbe la différence entre les valeurs prédites (bleu) et les valeurs attendues (rouge):
     # y_train_predict = pd.DataFrame(model.predict(x_train))
     # Y = y_train.copy()
