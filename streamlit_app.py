@@ -1,3 +1,4 @@
+from doctest import DocFileCase
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -5,16 +6,28 @@ from streamlit_option_menu import option_menu
 import requests
 from PIL import Image
 import streamlit.components.v1 as components
-from lime import lime_tabular
 import lightgbm
+from lime import lime_tabular
 import joblib
+import shap
+shap.initjs() # JavaScript plots
+import matplotlib.pyplot as pl
 
 # Load data
-df = pd.read_csv('X_train_features.csv')
+@st.cache
+def load_data():
+    df = pd.read_csv('X_train_features.csv')
+    return df 
+df = load_data()
+
+# Function to display a shap plot
+def st_shap(plot, height=None):
+    shap_html = f"<head>{shap.getjs()}</head><body>{plot.html()}</body>"
+    components.html(shap_html, height=height)
 
 # Initialize model artifacte files. This will be loaded at the start of FastAPI model server.
 lgbm = joblib.load(open("model_loans.joblib","rb"))
-#features = joblib.load(open("features.joblib", "rb"))
+features = joblib.load(open("features.joblib", "rb"))
 
 # Sidebar menu
 with st.sidebar:
@@ -67,8 +80,8 @@ if selected == "Prédiction des clients":
             st.success(prediction)
 
         if st.button("Interpréter"):
-            object = requests.post("https://vast-journey-10264.herokuapp.com/explain", json=data)
-            explain_lim = object.json
+            # object = requests.post("https://vast-journey-10264.herokuapp.com/explain", json=data)
+            # explain_lim = object.json
             # Explain/Interpretability
             interpretor = lime_tabular.LimeTabularExplainer(
                 training_data=np.array(df),
@@ -85,6 +98,7 @@ if selected == "Prédiction des clients":
             # source_code = HtmlFile.read()
             # print(source_code)
             components.html(exp.as_html(), height=700)
+        
     get_pred_per_client()
 
 # Client page
@@ -144,17 +158,30 @@ if selected == "Prédiction des nouvaux clients":
 # Comparison page
 if selected == "Comparaison":
     st.title(f"Quelques comparaisons")
+    st.subheader("Clients similaires")
+    # Display stacked Shapley values along clustered observations
+    explainer = shap.TreeExplainer(lgbm)
+    shap_values = explainer.shap_values(df.sample(2000))
+    st_shap(shap.force_plot(explainer.expected_value[0], shap_values[0], features), 400)
+    st.subheader("Explication générale")
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+   
+    #summary_plot
+    explain = shap.Explainer(lgbm, df.sample(2000))
+    shap_values_beeswarm = explain(df.sample(2000), check_additivity=False )
+    shap.plots.beeswarm(shap_values_beeswarm)
+    st.pyplot()
 
-    """ # Regardons ensuite au travers d’une courbe la différence entre les valeurs prédites (bleu) et les valeurs attendues (rouge):
-    y_train_predict = pd.DataFrame(model.predict(x_train))
-    Y = y_train.copy()
-    Y["Prediction"] = y_train_predict.to_numpy()
-    Y.columns = ["Real", "Predict"]
-    Y = Y.sort_index()
-    Y["Id"] = Y.index
-    Y["Delta"] = Y["Real"] - Y["Predict"]
-    Y = Y.head(50)
-    plt.rcParams["figure.figsize"] = (50, 10)
-    Y["Real"].plot(color="#FF0000") # Red line
-    Y["Predict"].plot(color="#0000FF") # Blue line
-    """
+    # """ # Regardons ensuite au travers d’une courbe la différence entre les valeurs prédites (bleu) et les valeurs attendues (rouge):
+    # y_train_predict = pd.DataFrame(model.predict(x_train))
+    # Y = y_train.copy()
+    # Y["Prediction"] = y_train_predict.to_numpy()
+    # Y.columns = ["Real", "Predict"]
+    # Y = Y.sort_index()
+    # Y["Id"] = Y.index
+    # Y["Delta"] = Y["Real"] - Y["Predict"]
+    # Y = Y.head(50)
+    # plt.rcParams["figure.figsize"] = (50, 10)
+    # Y["Real"].plot(color="#FF0000") # Red line
+    # Y["Predict"].plot(color="#0000FF") # Blue line
+    # """
