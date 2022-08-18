@@ -63,25 +63,25 @@ if selected == "Prédiction des clients":
             'SK_ID_CURR': df_dico['SK_ID_CURR'],
             'YEARS_BIRTH': df_dico['YEARS_BIRTH'],
             'YEARS_EMPLOYED': df_dico['YEARS_EMPLOYED'],
+            'ANNUITY_INCOME_PERC': df_dico['ANNUITY_INCOME_PERC'],
+            'EXT_SOURCE_2': df_dico['EXT_SOURCE_2'],
+            'AMT_CREDIT': df_dico['AMT_CREDIT'],
             'AMT_ANNUITY': df_dico['AMT_ANNUITY'],
-            'PAYMENT_RATE': df_dico['PAYMENT_RATE'],
             'INSTAL_DPD_MEAN': df_dico['INSTAL_DPD_MEAN'],
             'INSTAL_AMT_PAYMENT_SUM': df_dico['INSTAL_AMT_PAYMENT_SUM'],
-            'PREV_CNT_PAYMENT_MEAN': df_dico['PREV_CNT_PAYMENT_MEAN'],
-            'ACTIVE_DAYS_CREDIT_MAX': df_dico['ACTIVE_DAYS_CREDIT_MAX'],
-            'APPROVED_CNT_PAYMENT_MEAN': df_dico['ACTIVE_DAYS_CREDIT_MAX'],
-            'EXT_SOURCE_1': df_dico['EXT_SOURCE_1'],
-            'EXT_SOURCE_2': df_dico['EXT_SOURCE_2'],
-            'EXT_SOURCE_3': df_dico['EXT_SOURCE_3']
+            
+            
         }
         if st.button("Predict"):
             response = requests.post("https://vast-journey-10264.herokuapp.com/predict", json=data)
-            prediction = response.text
+            prediction = float(response.text)
             st.success(prediction)
+            if prediction <0.15:
+                st.write("On accorde le prêt")
+            else:
+                st.write("On n'accorde pas le prêt")
 
         if st.button("Interpréter"):
-            # object = requests.post("https://vast-journey-10264.herokuapp.com/explain", json=data)
-            # explain_lim = object.json
             # Explain/Interpretability
             interpretor = lime_tabular.LimeTabularExplainer(
                 training_data=np.array(df),
@@ -93,10 +93,6 @@ if selected == "Prédiction des clients":
                                             predict_fn=lgbm.predict_proba,
                                             num_samples=10000,
                                             num_features=6)
-            # exp.save_to_file('lime_fig.html')
-            # HtmlFile = open(r'lime_fig.html', 'r', encoding='utf-8')
-            # source_code = HtmlFile.read()
-            # print(source_code)
             components.html(exp.as_html(), height=700)
         
     get_pred_per_client()
@@ -110,47 +106,44 @@ if selected == "Prédiction des nouvaux clients":
                                       min_value=20, value=35, step=1)
         YEARS_EMPLOYED = st.number_input("Années d'expériences dans le poste actuel",
                                          min_value=0, value=15, step=1)
-        AMT_ANNUITY = st.number_input("Le montant régulier du remboursement du prêt",
-                                      min_value=1615, value=25000, step=100)
-        PAYMENT_RATE = st.number_input("Le ratio du paiement du prêt",
+        ANNUITY_INCOME_PERC = st.number_input("Le pourcentage des revenus par rapport au montant du crédit",
+                                        min_value=0, value=0, step=1)
+        EXT_SOURCE_2 = st.slider("Le 2nd score exterieur",
+                                 min_value=0.014, max_value=0.9, value=0.5, step=0.001)
+        AMT_CREDIT = st.number_input("Le montant du prêt demandé",
                                        min_value=0.022, value=0.04, step=0.001)
+        AMT_ANNUITY = st.number_input("Les échances du remboursement du prêt",
+                                      min_value=1615, value=25000, step=100)
+        
         INSTAL_DPD_MEAN = st.number_input("La durée moyenne du retard du prêt",
                                           min_value=0, value=0, step=1)
         INSTAL_AMT_PAYMENT_SUM = st.number_input("La somme des paiements du remboursement des prêts",
                                                  min_value=0, value=0, step=1)
-        PREV_CNT_PAYMENT_MEAN = st.number_input("Le paiement moyen du remboursement des prêts précents",
-                                                min_value=0, value=300000, step=1000)
-        ACTIVE_DAYS_CREDIT_MAX = st.number_input("Le nombre des jours maximums  ",
-                                                 min_value=0, value=0, step=1)
-        APPROVED_CNT_PAYMENT_MEAN = st.number_input("La durée moyenne du dernier prêt approuvé  ",
-                                                    min_value=0, value=0, step=1)
-        EXT_SOURCE_1 = st.slider("Le 1er score exterieur",
-                                 min_value=0.014, max_value=0.9, value=0.5, step=0.001)
-        EXT_SOURCE_2 = st.slider("Le 2nd score exterieur",
-                                 min_value=0.014, max_value=0.9, value=0.5, step=0.001)
-        EXT_SOURCE_3 = st.slider("Le 3e score exterieur",
-                                 min_value=0.014, max_value=0.9, value=0.5, step=0.001)
+        
+        
 
         data = {
             'SK_ID_CURR': SK_ID_CURR,
             'YEARS_BIRTH': YEARS_BIRTH,
             'YEARS_EMPLOYED': YEARS_EMPLOYED,
+            'ANNUITY_INCOME_PERC': ANNUITY_INCOME_PERC,
+            'EXT_SOURCE_2': EXT_SOURCE_2,
+            'AMT_CREDIT': AMT_CREDIT,
             'AMT_ANNUITY': AMT_ANNUITY,
-            'PAYMENT_RATE': PAYMENT_RATE,
             'INSTAL_DPD_MEAN': INSTAL_DPD_MEAN,
             'INSTAL_AMT_PAYMENT_SUM': INSTAL_AMT_PAYMENT_SUM,
-            'PREV_CNT_PAYMENT_MEAN': PREV_CNT_PAYMENT_MEAN,
-            'ACTIVE_DAYS_CREDIT_MAX': ACTIVE_DAYS_CREDIT_MAX,
-            'APPROVED_CNT_PAYMENT_MEAN': APPROVED_CNT_PAYMENT_MEAN,
-            'EXT_SOURCE_1': EXT_SOURCE_1,
-            'EXT_SOURCE_2': EXT_SOURCE_2,
-            'EXT_SOURCE_3': EXT_SOURCE_3
+            
+            
         }
 
         if st.button("Predict"):
             response = requests.post("https://vast-journey-10264.herokuapp.com/predict", json=data)
-            prediction = response.text
+            prediction = float(response.text)
             st.success(prediction)
+            if prediction <0.15:
+                st.write("On accorde le prêt")
+            else:
+                st.write("On n'accorde pas le prêt")
 
     if __name__ == '__main__':
         # by default it will run at 8501 port
